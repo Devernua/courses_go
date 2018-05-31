@@ -2,15 +2,22 @@ package priorityqueue
 
 type KeyType interface{} // priority
 type ValueType interface{}
+type ComparatorType func(KeyType, KeyType) bool
 
 type item struct {
 	priority KeyType
 	value ValueType
 }
 
+func NewPriorityQueue(comparator ComparatorType) PriorityQueue {
+	p := PriorityQueue{}
+	p.comparator = comparator
+	return p
+}
+
 type PriorityQueue struct {
 	arr []item
-	comparator func(KeyType, KeyType) bool
+	comparator ComparatorType
 }
 
 func (p *PriorityQueue) Push(key KeyType, val ValueType) {
@@ -27,7 +34,7 @@ func (p *PriorityQueue) Pop() (KeyType, ValueType) {
 	p.arr[0] = p.arr[len(p.arr) - 1]
 	p.arr = p.arr[:len(p.arr) - 1]
 	p.shiftDown(0)
-	return result, nil
+	return result.priority, result.value
 }
 
 func (p PriorityQueue) Size() (int) {
@@ -69,7 +76,7 @@ func (p *PriorityQueue) shiftDown(idx int) {
 	}
 
 	rightIdx := p.rightChild(idx)
-	if rightIdx < len(p.arr) && p.comparator(p.arr[maxIdx].priority, p.arr[rightIdx]) {
+	if rightIdx < len(p.arr) && p.comparator(p.arr[maxIdx].priority, p.arr[rightIdx].priority) {
 		maxIdx = rightIdx
 	}
 
