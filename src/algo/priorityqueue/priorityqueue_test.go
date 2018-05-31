@@ -4,11 +4,11 @@ import (
 	"testing"
 )
 
-func cmpLessInt(l, r KeyType) bool {
+func cmpLessInt(l, r ValueType) bool {
 	return l.(int) < r.(int)
 }
 
-func cmpMoreInt(l, r KeyType) bool {
+func cmpMoreInt(l, r ValueType) bool {
 	return r.(int) < l.(int)
 }
 
@@ -17,13 +17,13 @@ func TestSortInt(t *testing.T) {
 	output := []int{1, 2, 3, 4, 15, 20}
 
 	p := NewPriorityQueue(cmpMoreInt)
-	for idx, prior := range input {
-		p.Push(prior, idx)
+	for _, prior := range input {
+		p.Push(prior)
 	}
 
 	// check
 	for _, expPrior := range output {
-		prior, _ := p.Pop()
+		prior := p.Pop()
 		if expPrior != prior {
 			t.Errorf("test for sort int failed %v != %v", expPrior, prior)
 		}

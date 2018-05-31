@@ -1,13 +1,7 @@
 package priorityqueue
 
-type KeyType interface{} // priority
 type ValueType interface{}
-type ComparatorType func(KeyType, KeyType) bool
-
-type item struct {
-	priority KeyType
-	value ValueType
-}
+type ComparatorType func(ValueType, ValueType) bool
 
 func NewPriorityQueue(comparator ComparatorType) PriorityQueue {
 	p := PriorityQueue{}
@@ -16,16 +10,16 @@ func NewPriorityQueue(comparator ComparatorType) PriorityQueue {
 }
 
 type PriorityQueue struct {
-	arr []item
+	arr []ValueType
 	comparator ComparatorType
 }
 
-func (p *PriorityQueue) Push(key KeyType, val ValueType) {
-	p.arr = append(p.arr, item{key, val})
+func (p *PriorityQueue) Push(val ValueType) {
+	p.arr = append(p.arr, val)
 	p.shiftUp(len(p.arr) - 1)
 }
 
-func (p *PriorityQueue) Pop() (KeyType, ValueType) {
+func (p *PriorityQueue) Pop() ValueType {
 	if len(p.arr) == 0 {
 		panic("queue is empty")
 	}
@@ -34,7 +28,7 @@ func (p *PriorityQueue) Pop() (KeyType, ValueType) {
 	p.arr[0] = p.arr[len(p.arr) - 1]
 	p.arr = p.arr[:len(p.arr) - 1]
 	p.shiftDown(0)
-	return result.priority, result.value
+	return result
 }
 
 func (p PriorityQueue) Size() (int) {
@@ -61,7 +55,7 @@ func (p PriorityQueue) rightChild(idx int) (rightIdx int) {
 }
 
 func (p *PriorityQueue) shiftUp(idx int) {
-	for idx < len(p.arr) && idx > 0 && p.comparator(p.arr[p.parent(idx)].priority, p.arr[idx].priority) {
+	for idx < len(p.arr) && idx > 0 && p.comparator(p.arr[p.parent(idx)], p.arr[idx]) {
 		p.arr[p.parent(idx)], p.arr[idx] = p.arr[idx], p.arr[p.parent(idx)]
 		idx = p.parent(idx)
 	}
@@ -71,12 +65,12 @@ func (p *PriorityQueue) shiftDown(idx int) {
 	maxIdx := idx
 
 	leftIdx := p.leftChild(idx)
-	if leftIdx < len(p.arr) && p.comparator(p.arr[maxIdx].priority, p.arr[leftIdx].priority) {
+	if leftIdx < len(p.arr) && p.comparator(p.arr[maxIdx], p.arr[leftIdx]) {
 		maxIdx = leftIdx
 	}
 
 	rightIdx := p.rightChild(idx)
-	if rightIdx < len(p.arr) && p.comparator(p.arr[maxIdx].priority, p.arr[rightIdx].priority) {
+	if rightIdx < len(p.arr) && p.comparator(p.arr[maxIdx], p.arr[rightIdx]) {
 		maxIdx = rightIdx
 	}
 
