@@ -6,7 +6,7 @@ func TestJoinSets(t *testing.T) {
 	set1 := []int{1, 2, 3}
 	set2 := []int{4, 5, 6}
 
-	s := NewDisJoinSet()
+	s := NewDisJoinSet(7)
 
 	for i := 1; i <= 6; i++ {
 		s.MakeSet(i)

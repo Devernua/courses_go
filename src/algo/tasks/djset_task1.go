@@ -1,16 +1,16 @@
 package main
 
 import (
-	"algo/disjoinset"
 	"fmt"
+	"algo/disjoinset"
 )
 
 func main() {
 	var n, m int
 	fmt.Scanf("%v %v", &n, &m)
 
-	weights := make(map[int]int, n)
-	djset := disjoinset.NewDisJoinSet()
+	weights := make([]int, n + 1)
+	djset := disjoinset.NewDisJoinSet(n + 1)
 	maxWeight := 0
 
 	for i := 1; i <= n; i++ {

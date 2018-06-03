@@ -1,15 +1,15 @@
 package disjoinset
 
-func NewDisJoinSet() DisJoinSet {
+func NewDisJoinSet(max int) DisJoinSet {
 	s := DisJoinSet{}
-	s.parent = map[int]int{}
-	s.rank = map[int]int{}
+	s.parent = make([]int, max)
+	s.rank = make([]int, max)
 	return s
 }
 
 type DisJoinSet struct {
-	parent map[int]int
-	rank map[int]int // there only root, dont forgot delete on union less, and update new root
+	parent []int
+	rank []int // there only root, dont forgot delete on union less, and update new root
 }
 
 func (s *DisJoinSet) MakeSet(idx int) {
@@ -27,10 +27,8 @@ func (s *DisJoinSet) Union(left, right int) {
 	}
 	if s.rank[leftParent] > s.rank[rightParent] {
 		s.parent[rightParent] = leftParent
-		delete(s.rank, rightParent)
 	} else {
 		s.parent[leftParent] = rightParent
-		delete(s.rank, leftParent)
 		if s.rank[leftParent] == s.rank[rightParent] {
 			s.rank[rightParent] += 1
 		}
