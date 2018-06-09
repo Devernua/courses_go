@@ -55,8 +55,10 @@ func (h *HashTable) HashFunction(value ValueType) (result uint32) {
 }
 
 func (h *HashTable) Insert(value ValueType) {
-	foundList := &h.arr[h.HashFunction(value)]
-	foundList.PushFront(value)
+	if h.Find(value) == nil {
+		foundList := &h.arr[h.HashFunction(value)]
+		foundList.PushFront(value)
+	}
 }
 
 func (h *HashTable) Delete(value ValueType) {

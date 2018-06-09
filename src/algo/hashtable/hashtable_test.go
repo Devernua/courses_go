@@ -4,11 +4,11 @@ import (
 	"testing"
 )
 
-type StringWrapper struct {
+type stringWrapper struct {
 	Str string
 }
 
-func (str *StringWrapper) Data() (buf []byte) {
+func (str *stringWrapper) Data() (buf []byte) {
 	// TODO: optimize
 	for _, c := range str.Str {
 		buf = append(buf, byte(c))
@@ -20,7 +20,7 @@ func TestHashTable(t *testing.T) {
 	h := New(5)
 	data := []string{"world", "HellO"}
 	for _, d := range data {
-		h.Insert(&StringWrapper{d})
+		h.Insert(&stringWrapper{d})
 	}
 
 	res := h.Check(4)
@@ -29,13 +29,13 @@ func TestHashTable(t *testing.T) {
 	}
 
 	for idx, s := range res {
-		curStr := s.(*StringWrapper).Str
+		curStr := s.(*stringWrapper).Str
 		if curStr != data[len(res) - idx - 1] {
 			t.Errorf("test check hash table failed %v != %v", curStr, data[idx])
 		}
 	}
 
-	findResult := h.Find(&StringWrapper{"HellO"})
+	findResult := h.Find(&stringWrapper{"HellO"})
 	if findResult == nil {
 		t.Errorf("test check hash table find return nil")
 	}
