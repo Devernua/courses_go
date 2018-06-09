@@ -24,12 +24,20 @@ func TestHashTable(t *testing.T) {
 	}
 
 	res := h.Check(4)
+	if len(res) != 2 {
+		t.Errorf("test check hash failed")
+	}
 
 	for idx, s := range res {
 		curStr := s.(*StringWrapper).Str
-		if curStr != data[idx] {
+		if curStr != data[len(res) - idx - 1] {
 			t.Errorf("test check hash table failed %v != %v", curStr, data[idx])
 		}
+	}
+
+	findResult := h.Find(&StringWrapper{"HellO"})
+	if findResult == nil {
+		t.Errorf("test check hash table find return nil")
 	}
 
 }

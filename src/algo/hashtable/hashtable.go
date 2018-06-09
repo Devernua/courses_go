@@ -6,7 +6,7 @@ import (
 )
 
 // TODO: dynamically reallocate and calculate if need
-const primeHashTable uint32 = 1000000007 // prime
+const primeHashTable uint64 = 1000000007 // prime
 const randomX uint32 = 263
 
 type ValueType interface {
@@ -42,20 +42,20 @@ func (h *HashTable) HashFunction(value ValueType) (result uint32) {
 			if idx == 0 {
 				h.cachePowersX = append(h.cachePowersX, 1)
 			} else {
-				h.cachePowersX = append(h.cachePowersX, randomX * h.cachePowersX[idx - 1] % primeHashTable)
+				newVal := uint64(randomX) * uint64(h.cachePowersX[idx - 1])
+				h.cachePowersX = append(h.cachePowersX, uint32(newVal % primeHashTable))
 			}
 		}
 
-		result = (result + h.cachePowersX[idx] * (uint32)(b)) % primeHashTable
+		newVal := uint64(result) + uint64(h.cachePowersX[idx]) * (uint64)(b)
+		result = uint32(newVal % primeHashTable)
 	}
-
-	list.New()
 
 	return result % h.maxSize
 }
 
 func (h *HashTable) Insert(value ValueType) {
-	foundList := h.arr[h.HashFunction(value)]
+	foundList := &h.arr[h.HashFunction(value)]
 	foundList.PushFront(value)
 }
 
@@ -71,7 +71,8 @@ func (h *HashTable) Delete(value ValueType) {
 }
 
 func (h HashTable) Find(value ValueType) ValueType {
-	foundList := h.arr[h.HashFunction(value)]
+	idx := h.HashFunction(value)
+	foundList := h.arr[idx]
 
 	for v := foundList.Front(); v != nil; v = v.Next() {
 		if bytes.Compare(value.Data(), v.Value.(ValueType).Data()) == 0 {
