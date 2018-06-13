@@ -1,6 +1,10 @@
 package main
 
-import "sync"
+import (
+	"sync"
+	"sort"
+	"strconv"
+)
 
 func startTask(task job, in, out chan interface{}, wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -25,14 +29,42 @@ func ExecutePipeline(tasks ...job) {
 	wg.Wait()
 }
 
-func SingleHash(in, out chan interface{}) {
+// TODO: need wrapper on MD5 which will protect function with mutex
+// TODO: need wrapper on crc32 which will get result in put order!
 
+func SingleHash(in, out chan interface{}) {
+	// TODO: multithreading
+	for data := range in {
+		first := DataSignerCrc32(strconv.Itoa(data.(int)))
+		second := DataSignerCrc32(DataSignerMd5(strconv.Itoa(data.(int))))
+		out <- first + "~" + second
+	}
 }
 
 func MultiHash(in, out chan interface{}) {
-
+	// TODO: multithreading
+	for data := range in {
+		var result string
+		for i := 0; i < 6; i++ {
+			result += DataSignerCrc32(strconv.Itoa(i) + data.(string))
+		}
+		out <- result
+	}
 }
 
 func CombineResults(in, out chan interface{}) {
+	var collect []string
+	for data := range in {
+		collect = append(collect, data.(string))
+	}
+	sort.Strings(collect)
 
+	var result string
+	for idx, col := range collect {
+		result += col
+		if idx + 1 != len(collect) {
+			result += "_"
+		}
+	}
+	out <- result
 }
