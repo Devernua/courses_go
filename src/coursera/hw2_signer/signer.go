@@ -47,10 +47,11 @@ func calcSingleHash(strData, md5Result string, prev, next chan struct {}, out ch
 	go calcCRC32(strData, lht)
 	go calcCRC32(md5Result, rht)
 
+	<-prev // wait complete
+
 	left := <-lht
 	right := <- rht
 
-	<-prev // wait complete
 	out <- left + "~" + right
 }
 
@@ -67,13 +68,14 @@ func calcMultiHash(strs []string, prev, next chan struct {}, out chan interface{
 		go calcCRC32(str, channels[idx])
 	}
 
+	<- prev // wait complete
+
 	result := ""
 	for _, c := range channels {
 		str := <-c
 		result += str
 	}
 
-	<- prev // wait complete
 	out <- result
 }
 
