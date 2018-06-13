@@ -34,28 +34,7 @@ func ExecutePipeline(tasks ...job) {
 //	mtx *sync.Mutex
 //}
 
-// TODO: make one function which get separator and write result
-func calcSingleHash(strData, md5Result string, prev, next chan struct {}, out chan interface{}) {
-	defer func(){
-		next <- struct{}{}
-		close(next)
-	}()
-
-	lht := make(chan string)
-	rht := make(chan string)
-
-	go calcCRC32(strData, lht)
-	go calcCRC32(md5Result, rht)
-
-	<-prev // wait complete
-
-	left := <-lht
-	right := <- rht
-
-	out <- left + "~" + right
-}
-
-func calcMultiHash(strs []string, prev, next chan struct {}, out chan interface{}) {
+func calcCRC32Hashes(strs []string, div string, prev, next chan struct {}, out chan interface{}) {
 	defer func(){
 		next <- struct{}{}
 		close(next)
@@ -71,9 +50,12 @@ func calcMultiHash(strs []string, prev, next chan struct {}, out chan interface{
 	<- prev // wait complete
 
 	result := ""
-	for _, c := range channels {
+	for idx, c := range channels {
 		str := <-c
 		result += str
+		if idx + 1 != len(channels) {
+			result += div
+		}
 	}
 
 	out <- result
@@ -98,7 +80,7 @@ func SingleHash(in, out chan interface{}) {
 		prev = next
 		next = make(chan struct{})
 
-		go calcSingleHash(strData, md5Result, prev, next, out)
+		go calcCRC32Hashes([]string{strData, md5Result}, "~", prev, next, out)
 
 		if needNext {
 			needNext = false
@@ -125,7 +107,7 @@ func MultiHash(in, out chan interface{}) {
 		prev = next
 		next = make(chan struct{})
 
-		go calcMultiHash(result, prev, next, out)
+		go calcCRC32Hashes(result,"", prev, next, out)
 
 		if needNext {
 			needNext = false
