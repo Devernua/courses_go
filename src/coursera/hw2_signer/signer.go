@@ -30,26 +30,110 @@ func ExecutePipeline(tasks ...job) {
 }
 
 // TODO: need wrapper on MD5 which will protect function with mutex
-// TODO: need wrapper on crc32 which will get result in put order!
+//type MD5LockWrapper struct {
+//	mtx *sync.Mutex
+//}
+
+// TODO: make one function which get separator and write result
+func calcSingleHash(strData, md5Result string, prev, next chan struct {}, out chan interface{}) {
+	defer func(){
+		next <- struct{}{}
+		close(next)
+	}()
+
+	lht := make(chan string)
+	rht := make(chan string)
+
+	go calcCRC32(strData, lht)
+	go calcCRC32(md5Result, rht)
+
+	left := <-lht
+	right := <- rht
+
+	<-prev // wait complete
+	out <- left + "~" + right
+}
+
+func calcMultiHash(strs []string, prev, next chan struct {}, out chan interface{}) {
+	defer func(){
+		next <- struct{}{}
+		close(next)
+	}()
+
+	channels := make([]chan string, len(strs))
+
+	for idx, str := range strs {
+		channels[idx] = make(chan string)
+		go calcCRC32(str, channels[idx])
+	}
+
+	result := ""
+	for _, c := range channels {
+		str := <-c
+		result += str
+	}
+
+	<- prev // wait complete
+	out <- result
+}
+
+func calcCRC32(data string, out chan string) {
+	defer close(out)
+	out <- DataSignerCrc32(data)
+	return
+}
 
 func SingleHash(in, out chan interface{}) {
-	// TODO: multithreading
+	var prev chan struct{}
+	next := make(chan struct{})
+
+	needNext := true
 	for data := range in {
-		first := DataSignerCrc32(strconv.Itoa(data.(int)))
-		second := DataSignerCrc32(DataSignerMd5(strconv.Itoa(data.(int))))
-		out <- first + "~" + second
+		// todo: make like overhead lock in common
+		strData := strconv.Itoa(data.(int))
+		md5Result := DataSignerMd5(strData)
+
+		prev = next
+		next = make(chan struct{})
+
+		go calcSingleHash(strData, md5Result, prev, next, out)
+
+		if needNext {
+			needNext = false
+			prev <- struct{}{}
+			close(prev)
+		}
 	}
+
+	<- next // complete // TODO: may be not needed
+	return
 }
 
 func MultiHash(in, out chan interface{}) {
-	// TODO: multithreading
+	var prev chan struct{}
+	next := make(chan struct{})
+
+	needNext := true
 	for data := range in {
-		var result string
+		var result []string
 		for i := 0; i < 6; i++ {
-			result += DataSignerCrc32(strconv.Itoa(i) + data.(string))
+			result = append(result, strconv.Itoa(i) + data.(string))
 		}
-		out <- result
+
+		prev = next
+		next = make(chan struct{})
+
+		go calcMultiHash(result, prev, next, out)
+
+		if needNext {
+			needNext = false
+			prev <- struct{}{}
+			close(prev)
+		}
 	}
+
+	<- next // complete // TODO: may be not needed
+	return
 }
 
 func CombineResults(in, out chan interface{}) {
@@ -67,4 +151,5 @@ func CombineResults(in, out chan interface{}) {
 		}
 	}
 	out <- result
+	return
 }
