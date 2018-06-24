@@ -15,7 +15,7 @@ type ValueType interface {
 
 type HashTable struct {
 	maxSize uint32
-	arr []list.List
+	arr     []list.List
 
 	// cache for x^n
 	cachePowersX []uint32
@@ -42,12 +42,12 @@ func (h *HashTable) HashFunction(value ValueType) (result uint32) {
 			if idx == 0 {
 				h.cachePowersX = append(h.cachePowersX, 1)
 			} else {
-				newVal := uint64(randomX) * uint64(h.cachePowersX[idx - 1])
-				h.cachePowersX = append(h.cachePowersX, uint32(newVal % primeHashTable))
+				newVal := uint64(randomX) * uint64(h.cachePowersX[idx-1])
+				h.cachePowersX = append(h.cachePowersX, uint32(newVal%primeHashTable))
 			}
 		}
 
-		newVal := uint64(result) + uint64(h.cachePowersX[idx]) * (uint64)(b)
+		newVal := uint64(result) + uint64(h.cachePowersX[idx])*(uint64)(b)
 		result = uint32(newVal % primeHashTable)
 	}
 
@@ -93,4 +93,3 @@ func (h HashTable) Check(idx uint32) []ValueType {
 
 	return result
 }
-

@@ -30,7 +30,7 @@ func TestHashTable(t *testing.T) {
 
 	for idx, s := range res {
 		curStr := s.(*stringWrapper).Str
-		if curStr != data[len(res) - idx - 1] {
+		if curStr != data[len(res)-idx-1] {
 			t.Errorf("test check hash table failed %v != %v", curStr, data[idx])
 		}
 	}

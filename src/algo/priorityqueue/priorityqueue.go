@@ -3,14 +3,14 @@ package priorityqueue
 type ValueType interface{}
 type ComparatorType func(ValueType, ValueType) bool
 
-func NewPriorityQueue(comparator ComparatorType) PriorityQueue {
-	p := PriorityQueue{}
+func New(comparator ComparatorType) *PriorityQueue {
+	p := &PriorityQueue{}
 	p.comparator = comparator
 	return p
 }
 
 type PriorityQueue struct {
-	arr []ValueType
+	arr        []ValueType
 	comparator ComparatorType
 }
 
@@ -23,10 +23,10 @@ func (p *PriorityQueue) Pop() ValueType {
 	if len(p.arr) == 0 {
 		panic("queue is empty")
 	}
-	
+
 	result := p.arr[0]
-	p.arr[0] = p.arr[len(p.arr) - 1]
-	p.arr = p.arr[:len(p.arr) - 1]
+	p.arr[0] = p.arr[len(p.arr)-1]
+	p.arr = p.arr[:len(p.arr)-1]
 	p.shiftDown(0)
 	return result
 }
@@ -45,12 +45,12 @@ func (p PriorityQueue) parent(idx int) (parentIdx int) {
 }
 
 func (p PriorityQueue) leftChild(idx int) (leftIdx int) {
-	leftIdx = 2 * idx + 1
+	leftIdx = 2*idx + 1
 	return
 }
 
 func (p PriorityQueue) rightChild(idx int) (rightIdx int) {
-	rightIdx = 2 * idx + 2
+	rightIdx = 2*idx + 2
 	return
 }
 

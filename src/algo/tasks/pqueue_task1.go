@@ -5,12 +5,12 @@ import "fmt"
 func siftDownWithPrint(arr *[]int, idx int, results *[][2]int) {
 	maxIdx := idx
 
-	leftIdx := 2 * idx + 1
+	leftIdx := 2*idx + 1
 	if leftIdx < len(*arr) && (*arr)[leftIdx] < (*arr)[maxIdx] {
 		maxIdx = leftIdx
 	}
 
-	rightIdx := 2 * idx + 2
+	rightIdx := 2*idx + 2
 	if rightIdx < len(*arr) && (*arr)[rightIdx] < (*arr)[maxIdx] {
 		maxIdx = rightIdx
 	}
@@ -42,4 +42,3 @@ func main() {
 		fmt.Println(pair[0], pair[1])
 	}
 }
-

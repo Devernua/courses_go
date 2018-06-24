@@ -10,7 +10,7 @@ func main() {
 	var n, e, d int
 	fmt.Scanf("%v %v %v", &n, &e, &d)
 
-	djset := disjoinset.NewDisJoinSet(n + 1)
+	djset := disjoinset.New(n + 1)
 
 	for i := 1; i <= n; i++ {
 		djset.MakeSet(i)

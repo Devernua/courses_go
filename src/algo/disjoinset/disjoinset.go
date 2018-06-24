@@ -1,7 +1,7 @@
 package disjoinset
 
-func NewDisJoinSet(max int) DisJoinSet {
-	s := DisJoinSet{}
+func New(max int) *DisJoinSet {
+	s := &DisJoinSet{}
 	s.parent = make([]int, max)
 	s.rank = make([]int, max)
 	return s
@@ -9,7 +9,7 @@ func NewDisJoinSet(max int) DisJoinSet {
 
 type DisJoinSet struct {
 	parent []int
-	rank []int // there only root, dont forgot delete on union less, and update new root
+	rank   []int // there only root, dont forgot delete on union less, and update new root
 }
 
 func (s *DisJoinSet) MakeSet(idx int) {

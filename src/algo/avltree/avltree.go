@@ -2,15 +2,17 @@ package avltree
 
 type node struct {
 	left, right *node
-	parent *node
-	rank int // TODO: think about rank
-	value int // TODO: interface {}
+	parent      *node
+	rank        int // TODO: think about rank
+	value       int // TODO: interface {}
 }
 
 type AVLTree struct {
 	head *node
 	// smth
 }
+
+func New() *AVLTree { return new(AVLTree) }
 
 func (t *AVLTree) Insert(value int) error {
 	if t.head == nil {
@@ -58,6 +60,7 @@ func (t *AVLTree) Delete(value int) {
 		return
 	}
 
+	// leaf, left == right == nil
 	if foundNode.left == nil && foundNode.right == nil {
 		p := foundNode.parent
 		if foundNode.value < p.value {
@@ -65,6 +68,7 @@ func (t *AVLTree) Delete(value int) {
 		} else {
 			p.right = nil
 		}
+		// if left || right == nil
 	} else if foundNode.left == nil {
 		p := foundNode.parent
 		if foundNode.value < p.value {
@@ -73,7 +77,21 @@ func (t *AVLTree) Delete(value int) {
 			p.right = foundNode.right
 		}
 	} else if foundNode.right == nil {
-
+		p := foundNode.parent
+		if foundNode.value < p.value {
+			p.left = foundNode.left
+		} else {
+			p.right = foundNode.left
+		}
+		// find max, swap and delete leaf
+	} else {
+		maxFounded := foundNode.left
+		for ; maxFounded.right != nil; maxFounded = maxFounded.right {
+		}
+		maxFounded.value, foundNode.value = foundNode.value, maxFounded.value
+		if maxFounded.parent != foundNode {
+			maxFounded.parent.right = nil // only if not left of head
+		}
 	}
 
 	// TODO: calc ranks

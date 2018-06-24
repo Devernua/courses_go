@@ -17,7 +17,6 @@ func (str *stringWrapper) Data() (buf []byte) {
 	return buf
 }
 
-
 func main() {
 	var m uint32
 	var n int
@@ -53,7 +52,7 @@ func main() {
 			res := h.Check(idx)
 			for idx, val := range res {
 				fmt.Print(val.(*stringWrapper).Str)
-				if idx + 1 != len(res) {
+				if idx+1 != len(res) {
 					fmt.Print(" ")
 				}
 			}

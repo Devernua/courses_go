@@ -6,7 +6,7 @@ import (
 )
 
 type valType struct {
-	id int
+	id   int
 	time uint64
 }
 
@@ -22,7 +22,7 @@ func main() {
 	var processorsNum, tasksNum int
 	fmt.Scanf("%v %v", &processorsNum, &tasksNum)
 
-	processors := priorityqueue.NewPriorityQueue(cmp)
+	processors := priorityqueue.New(cmp)
 	for i := 0; i < processorsNum; i++ {
 		processors.Push(valType{i, 0})
 	}
@@ -38,4 +38,3 @@ func main() {
 		processors.Push(proc)
 	}
 }
-

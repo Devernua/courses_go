@@ -9,8 +9,8 @@ func main() {
 	var n, m int
 	fmt.Scanf("%v %v", &n, &m)
 
-	weights := make([]int, n + 1)
-	djset := disjoinset.NewDisJoinSet(n + 1)
+	weights := make([]int, n+1)
+	djset := disjoinset.New(n + 1)
 	maxWeight := 0
 
 	for i := 1; i <= n; i++ {
@@ -30,7 +30,7 @@ func main() {
 		r := djset.Find(src)
 
 		if l != r {
-			weights[l], weights[r] = weights[l] + weights[r], weights[l] + weights[r]
+			weights[l], weights[r] = weights[l]+weights[r], weights[l]+weights[r]
 			djset.Union(l, r)
 			if weights[l] > maxWeight {
 				maxWeight = weights[l]

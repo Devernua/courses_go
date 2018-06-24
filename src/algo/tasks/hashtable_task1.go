@@ -7,7 +7,7 @@ import (
 
 type notePhone struct {
 	number string
-	name string
+	name   string
 }
 
 func (n notePhone) Data() (result []byte) {

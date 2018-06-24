@@ -16,7 +16,7 @@ func TestSortInt(t *testing.T) {
 	input := []int{1, 3, 15, 20, 4, 2}
 	output := []int{1, 2, 3, 4, 15, 20}
 
-	p := NewPriorityQueue(cmpMoreInt)
+	p := New(cmpMoreInt)
 	for _, prior := range input {
 		p.Push(prior)
 	}
