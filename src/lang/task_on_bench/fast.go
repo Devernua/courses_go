@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
+	"strings"
 )
 
 type User struct {
@@ -30,8 +30,7 @@ func FastSearch(out io.Writer) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
-	r := regexp.MustCompile("@")
-	seenBrowsers := []string{}
+	seenBrowsers := make(map[string]struct{})
 	uniqueBrowsers := 0
 	foundUsers := ""
 	i := -1
@@ -40,61 +39,32 @@ func FastSearch(out io.Writer) {
 		i++
 
 		var user User
-		// fmt.Printf("%v %v\n", err, line)
 		err := json.Unmarshal([]byte(scanner.Text()), &user)
 		if err != nil {
 			panic(err)
 		}
 
-		isAndroid := false
-		isMSIE := false
-
+		hasAndroid := false
+		hasMSIE := false
 		for _, browser := range user.Browsers {
+			isAndroid := strings.Contains(browser, "Android")
+			isMSIE := strings.Contains(browser, "MSIE")
 
-			if ok, err := regexp.MatchString("Android", browser); ok && err == nil {
-				isAndroid = true
-				notSeenBefore := true
-				for _, item := range seenBrowsers {
-					if item == browser {
-						notSeenBefore = false
-					}
-				}
-				if notSeenBefore {
-					// log.Printf("SLOW New browser: %s, first seen: %s", browser, user["name"])
-					seenBrowsers = append(seenBrowsers, browser)
+			if isAndroid || isMSIE {
+				if _, ok := seenBrowsers[browser]; !ok {
+					seenBrowsers[browser] = struct{}{}
 					uniqueBrowsers++
 				}
+				hasAndroid = isAndroid || hasAndroid
+				hasMSIE = isMSIE || hasMSIE
 			}
 		}
-
-		for _, browser := range user.Browsers {
-
-			if ok, err := regexp.MatchString("MSIE", browser); ok && err == nil {
-				isMSIE = true
-				notSeenBefore := true
-				for _, item := range seenBrowsers {
-					if item == browser {
-						notSeenBefore = false
-					}
-				}
-				if notSeenBefore {
-					// log.Printf("SLOW New browser: %s, first seen: %s", browser, user["name"])
-					seenBrowsers = append(seenBrowsers, browser)
-					uniqueBrowsers++
-				}
-			}
+		if hasAndroid && hasMSIE {
+			emailParts := strings.Split(user.Email, "@")
+			foundUsers += fmt.Sprintf("[%d] %s <%s>\n", i, user.Name, strings.Join(emailParts, " [at] "))
 		}
-
-		// TODO: use in regexp BOTH
-		if !(isAndroid && isMSIE) {
-			continue
-		}
-
-		// log.Println("Android and MSIE user:", user["name"], user["email"])
-		email := r.ReplaceAllString(user.Email, " [at] ")
-		foundUsers += fmt.Sprintf("[%d] %s <%s>\n", i, user.Name, email)
 	}
 
 	fmt.Fprintln(out, "found users:\n"+foundUsers)
-	fmt.Fprintln(out, "Total unique browsers", len(seenBrowsers))
+	fmt.Fprintln(out, "Total unique browsers", uniqueBrowsers)
 }
