@@ -82,20 +82,35 @@ type SearchHandler struct {
 }
 
 func SearchServer(w http.ResponseWriter, r *http.Request) {
-	// TODO: check access token
+	if r.Header.Get("AccessToken") != "123" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	// TODO: filtering
 	users := getUsers()
 	req, err := parseArgs(r.URL.Query())
 	if err != nil {
-		if req != nil {
-			// TODO: test
-		}
-		// TODO;
+		panic(err) // TODO: may be return internal error
 	}
+
+	if req.OrderField != "Id" && req.OrderField != "Age" && req.OrderField != "Name" && req.OrderField != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		errorResponse := SearchErrorResponse{Error: "ErrorBadOrderField"}
+		res, err := json.Marshal(errorResponse)
+		if err != nil {
+			panic(err)
+		}
+
+		w.Write(res)
+		return
+	}
+
 	res, err := json.Marshal(users)
 	if err != nil {
-		// TODO;
+		panic(err)
 	}
+
 	w.Write(res)
 }
 
@@ -119,3 +134,19 @@ func TestSimple(t *testing.T) {
 		t.Fatal("users not found")
 	}
 }
+
+func TestBadAccessToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(SearchServer))
+	client := SearchClient{AccessToken: "BAD_ACCESS_TOKEN", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	if err == nil && err !=  fmt.Errorf("Bad AccessToken"){
+		t.Fatal("err response", err)
+	}
+}
+
