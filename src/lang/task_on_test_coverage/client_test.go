@@ -10,7 +10,9 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 )
 
 func parseArgs(values url.Values) (*SearchRequest, error) {
@@ -106,7 +108,7 @@ func SearchServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := json.Marshal(users)
+	res, err := json.Marshal(users[req.Offset:req.Limit])
 	if err != nil {
 		panic(err)
 	}
@@ -127,11 +129,58 @@ func TestSimple(t *testing.T) {
 	if err != nil {
 		t.Fatal("err response", err)
 	}
-	//for _, user := range resp.Users {
-	//	fmt.Println(user)
-	//}
+
 	if len(resp.Users) == 0 {
 		t.Fatal("users not found")
+	}
+}
+
+func TestSimpleMaxLimit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(SearchServer))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	resp, err := client.FindUsers(SearchRequest{
+		Limit:      40,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	if err != nil {
+		t.Fatal("err response", err)
+	}
+
+	if len(resp.Users) > 25 {
+		t.Fatal("users not found")
+	}
+}
+
+func TestSubZeroLimit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(SearchServer))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      -3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	if err == nil && err != fmt.Errorf("limit must be > 0") {
+		t.Fatal("err response", err)
+	}
+}
+
+func TestSubZeroOffset(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(SearchServer))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     -2,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	if err == nil && err != fmt.Errorf("offset must be > 0") {
+		t.Fatal("err response", err)
 	}
 }
 
@@ -145,8 +194,114 @@ func TestBadAccessToken(t *testing.T) {
 		OrderField: "Age",
 		OrderBy:    OrderByAsc,
 	})
-	if err == nil && err !=  fmt.Errorf("Bad AccessToken"){
+	if err == nil && err != fmt.Errorf("Bad AccessToken") {
 		t.Fatal("err response", err)
 	}
 }
 
+func TestTimeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){time.Sleep(time.Second)}))
+
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	fmt.Println(err)
+	if err == nil || !strings.Contains(err.Error(), "timeout") {
+		t.Fatal("err response:", err)
+	}
+}
+
+func TestEmptyURL(t *testing.T) {
+	//server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){fatal}))
+
+	client := SearchClient{AccessToken: "123", URL: ""}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	fmt.Println(err)
+	if err == nil || !strings.Contains(err.Error(), "unknown error") {
+		t.Fatal("err response:", err)
+	}
+}
+
+
+func TestFatalServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){w.WriteHeader(http.StatusInternalServerError)}))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	fmt.Println(err)
+	if err == nil || !strings.Contains(err.Error(), "SearchServer fatal error") {
+		t.Fatal("err response:", err)
+	}
+}
+
+func TestBadRequestWithBadBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){w.WriteHeader(http.StatusBadRequest)}))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	fmt.Println(err)
+	if err == nil || !strings.Contains(err.Error(), "cant unpack error json") {
+		t.Fatal("err response:", err)
+	}
+}
+
+func TestBadOrderField(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+		w.WriteHeader(http.StatusBadRequest)
+		body, _ :=json.Marshal(&SearchErrorResponse{Error: "ErrorBadOrderField"})
+		w.Write(body)
+	}))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	fmt.Println(err)
+	if err == nil || !strings.Contains(err.Error(), "OrderFeld") {
+		t.Fatal("err response:", err)
+	}
+}
+
+func TestUnknownErrorSearchResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+		w.WriteHeader(http.StatusBadRequest)
+		body, _ :=json.Marshal(&SearchErrorResponse{Error: "UnknownError"})
+		w.Write(body)
+	}))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	fmt.Println(err)
+	if err == nil || !strings.Contains(err.Error(), "unknown bad request error") {
+		t.Fatal("err response:", err)
+	}
+}
