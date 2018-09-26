@@ -200,7 +200,7 @@ func TestBadAccessToken(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){time.Sleep(time.Second)}))
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { time.Sleep(time.Second) }))
 
 	client := SearchClient{AccessToken: "123", URL: server.URL}
 	_, err := client.FindUsers(SearchRequest{
@@ -233,9 +233,8 @@ func TestEmptyURL(t *testing.T) {
 	}
 }
 
-
 func TestFatalServerError(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){w.WriteHeader(http.StatusInternalServerError)}))
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusInternalServerError) }))
 	client := SearchClient{AccessToken: "123", URL: server.URL}
 	_, err := client.FindUsers(SearchRequest{
 		Limit:      3,
@@ -251,7 +250,7 @@ func TestFatalServerError(t *testing.T) {
 }
 
 func TestBadRequestWithBadBody(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){w.WriteHeader(http.StatusBadRequest)}))
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusBadRequest) }))
 	client := SearchClient{AccessToken: "123", URL: server.URL}
 	_, err := client.FindUsers(SearchRequest{
 		Limit:      3,
@@ -267,9 +266,9 @@ func TestBadRequestWithBadBody(t *testing.T) {
 }
 
 func TestBadOrderField(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		body, _ :=json.Marshal(&SearchErrorResponse{Error: "ErrorBadOrderField"})
+		body, _ := json.Marshal(&SearchErrorResponse{Error: "ErrorBadOrderField"})
 		w.Write(body)
 	}))
 	client := SearchClient{AccessToken: "123", URL: server.URL}
@@ -287,9 +286,9 @@ func TestBadOrderField(t *testing.T) {
 }
 
 func TestUnknownErrorSearchResponse(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		body, _ :=json.Marshal(&SearchErrorResponse{Error: "UnknownError"})
+		body, _ := json.Marshal(&SearchErrorResponse{Error: "UnknownError"})
 		w.Write(body)
 	}))
 	client := SearchClient{AccessToken: "123", URL: server.URL}
@@ -303,5 +302,50 @@ func TestUnknownErrorSearchResponse(t *testing.T) {
 	fmt.Println(err)
 	if err == nil || !strings.Contains(err.Error(), "unknown bad request error") {
 		t.Fatal("err response:", err)
+	}
+}
+
+func TestBadBodyJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("bad json"))
+	}))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	_, err := client.FindUsers(SearchRequest{
+		Limit:      3,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	fmt.Println(err)
+	if err == nil || !strings.Contains(err.Error(), "cant unpack result json") {
+		t.Fatal("err response:", err)
+	}
+}
+
+
+func TestSimpleLessThenLimit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res, err := json.Marshal([]User{{Id:1}, {Id:2}})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Write(res)
+	}))
+	client := SearchClient{AccessToken: "123", URL: server.URL}
+	resp, err := client.FindUsers(SearchRequest{
+		Limit:      25,
+		Offset:     0,
+		Query:      "esse",
+		OrderField: "Age",
+		OrderBy:    OrderByAsc,
+	})
+	if err != nil {
+		t.Fatal("err response", err)
+	}
+
+	if len(resp.Users) == 0 {
+		t.Fatal("users not found")
 	}
 }
