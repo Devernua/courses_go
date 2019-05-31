@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"algo/disjoinset"
+	"fmt"
 )
 
 func main() {
