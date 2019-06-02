@@ -139,26 +139,37 @@ func main() {
 	var numNodes int
 	fmt.Scanf("%v", &numNodes)
 
-	nodes := make([]Node, numNodes)
+	// TODO: may be uncomment
+	//nodes := make([]*Node, numNodes)
+	nodes := make(map[int]*Node, numNodes)
 
 	for i := 0; i < numNodes; i++ {
 		var key, left, right int
 		fmt.Scanf("%v %v %v", &key, &left, &right)
-		curNode := &nodes[i]
+		if nodes[i] == nil {
+			nodes[i] = &Node{}
+		}
+		curNode := nodes[i]
 		curNode.Value = key
 		curNode.Visited = false
 		if left != -1 {
-			curNode.Left = &nodes[left]
+			if nodes[left] == nil {
+				nodes[left] = &Node{}
+			}
+			curNode.Left = nodes[left]
 			curNode.Left.Parent = curNode
 		}
 
 		if right != -1 {
-			curNode.Right = &nodes[right]
+			if nodes[right] == nil {
+				nodes[right] = &Node{}
+			}
+			curNode.Right = nodes[right]
 			curNode.Right.Parent = curNode
 		}
 	}
 
-	head := &nodes[0]
+	head := nodes[0]
 	for ; head.Parent != nil; head = head.Parent {
 	}
 	t := Tree{Head: head}
