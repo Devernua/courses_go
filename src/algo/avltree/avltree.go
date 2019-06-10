@@ -41,7 +41,14 @@ func (t *AVLTree) Insert(value int) error {
 		}
 	}
 
-	// TODO: calc ranks
+	// calc rank
+	// TODO: if rank changed more then by one, need rotate, and complete calc rank
+	rankNode := foundNode
+	for rankNode != nil && getRank(rankNode.left) != getRank(rankNode.right) {
+		rankNode.rank = max(getRank(rankNode.left), getRank(rankNode.right)) + 1
+		rankNode = rankNode.parent
+	}
+
 	// TODO: rotates
 	return nil
 }
@@ -60,28 +67,28 @@ func (t *AVLTree) Delete(value int) {
 		return
 	}
 
+	// TODO: if found head need unusual work
+	parentNode := foundNode.parent
+
 	// leaf, left == right == nil
 	if foundNode.left == nil && foundNode.right == nil {
-		p := foundNode.parent
-		if foundNode.value < p.value {
-			p.left = nil
+		if parentNode.left == foundNode {
+			parentNode.left = nil
 		} else {
-			p.right = nil
+			parentNode.right = nil
 		}
 		// if left || right == nil
 	} else if foundNode.left == nil {
-		p := foundNode.parent
-		if foundNode.value < p.value {
-			p.left = foundNode.right
+		if foundNode.value < parentNode.value {
+			parentNode.left = foundNode.right
 		} else {
-			p.right = foundNode.right
+			parentNode.right = foundNode.right
 		}
 	} else if foundNode.right == nil {
-		p := foundNode.parent
-		if foundNode.value < p.value {
-			p.left = foundNode.left
+		if foundNode.value < parentNode.value {
+			parentNode.left = foundNode.left
 		} else {
-			p.right = foundNode.left
+			parentNode.right = foundNode.left
 		}
 		// find max, swap and delete leaf
 	} else {
@@ -91,9 +98,33 @@ func (t *AVLTree) Delete(value int) {
 		maxFounded.value, foundNode.value = foundNode.value, maxFounded.value
 		if maxFounded.parent != foundNode {
 			maxFounded.parent.right = nil // only if not left of head
+		} else {
+			maxFounded.parent.left = nil // only if eq left with founded node
 		}
 	}
 
-	// TODO: calc ranks
+	// calc rank
+	// TODO: if rank changed more then by one, need rotate, and complete calc rank
+	rankNode := parentNode
+	for rankNode != nil && getRank(rankNode.left) != getRank(rankNode.right) {
+		rankNode.rank = max(getRank(rankNode.left), getRank(rankNode.right)) + 1
+		rankNode = rankNode.parent
+	}
+
 	// TODO: rotates
+}
+
+func getRank(n *node) int {
+	if n == nil {
+		return 0
+	} else {
+		return n.rank
+	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
